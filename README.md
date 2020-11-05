@@ -1,2 +1,3 @@
 # TSAI_END
-Research work on advanced NLP Application
+
+Research work on python and advanced NLP
