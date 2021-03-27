@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from torchtext.legacy.data import Field, BucketIterator, TabularDataset, Example, Dataset
+
 
 # Encoder
 
@@ -246,7 +246,7 @@ class Decoder(nn.Module):
         batch_size = trg.shape[0]
         trg_len = trg.shape[1]
 
-        pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size,1).to(device)
+        pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size,1).to(self.device)
 
         # pos = [batch_size, trg_len]
 

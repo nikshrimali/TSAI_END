@@ -1,12 +1,17 @@
 # Train.py - Code for training the model
 
-def train(model, iterator, optimizer, criterion, clip):
+import torch
+from tqdm import tqdm
+
+def train(model, iterator, optimizer, criterion, clip, device='cuda'):
     
     model.train()
     
     epoch_loss = 0
+    pbar = tqdm(iterator)
     
-    for i, batch in enumerate(iterator):
+    
+    for i, batch in enumerate(pbar):
         
         src = batch.statement
         trg = batch.code

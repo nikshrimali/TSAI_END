@@ -1,0 +1,32 @@
+name: PyCodeChatbot
+save_dir: saved/
+seed: 1
+target_device: 0
+
+modelpath:
+    type: PathModel
+    args: savedmodel.h5    
+      
+
+train_iterator:
+    type: Train_Iterator
+    args:
+        batch_size: 2
+        num_workers: 4
+        shuffle: True
+
+
+criterion: cross_entropy_loss
+
+optimizer:
+    type: SGD
+    args:
+        lr: 0.0005
+        momentum: 0.95
+        weight_decay: 0.000003
+
+
+data:
+    file_name: 'data\english_python_dataset.txt'
+
+epochs: 10

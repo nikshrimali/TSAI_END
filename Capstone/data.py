@@ -1,76 +1,73 @@
+# data.py - Contains code to load and extract the data
+
 import spacy
-spacy_en = spacy.load('en')
+spacy_en = spacy.load("en_core_web_sm")
 
 import numpy as np
 import pandas as pd 
-import random, math, time, json, random, os, re
+import random
+import os
+import re
 
-import logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s : %(levelname)s : %(message)s')
-logger = logging.getLogger('PythonCodeGen')
-
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f'Currently running on {device}')
+from torchtext.legacy.data import Field, BucketIterator, TabularDataset, Example, Dataset
 
 
+class GetData:
+    def __init__(self, file_name):
+        self.file_name = os.path.join(os.getcwd(), file_name)
 
-# Break the code into statement and the codes from the cleaned file
+    def readdata(self):
+        
+        with open(self.file_name, 'rb') as f:
+            f = str(f.read())
 
-file_name = '/content/drive/MyDrive/PythonEnglishDataset/english_python_data_cleaned.txt'
+        f = f.replace('\\n', ' nl ').replace(' ', ' ws ')
+        pattern = '\#.*?nl'
+        statement = re.findall(pattern, f)
+        code = re.split(pattern, f)
+        statement = [i.replace('ws', '').replace('nl', '').replace('#', '').replace('  ',' ').strip() for i in statement]
+        del code[0]
+        return list(zip(statement, code))
 
+    @staticmethod
+    def tokenize_en(text):
+        return [tok.text for tok in spacy_en.tokenizer(text)]
 
-with open(file_name, 'rb') as f:
-    f = str(f.read())
+    @staticmethod
+    def tokenize_code(text):
+        return text.split(' ')
 
-f = f.replace('\\n', ' nl ').replace(' ', ' ws ')
-pattern = '\#.*?nl'
-statement = re.findall(pattern, f)
-code = re.split(pattern, f)
+    def load_iterator(self, batch_size:int, device='cuda'):
 
-statement = [i.replace('ws', '').replace('nl', '').replace('#', '').replace('  ',' ').strip() for i in statement]
+        STAT = Field(tokenize= self.tokenize_en, 
+                    init_token='<sos>', 
+                    eos_token='<eos>', 
+                    lower=True,
+                    batch_first = True)
 
-del code[0]
+        CODE = Field(tokenize = self.tokenize_code, 
+                    init_token='<sos>', 
+                    eos_token='<eos>', 
+                    lower=False,
+                    batch_first = True)
+        
+        final_data = self.readdata()
 
-final_data = list(zip(statement, code))
+        fields = [('statement', STAT),('code', CODE)]
 
-
-def tokenize_en(text):
-  return [tok.text for tok in spacy_en.tokenizer(text)]
-
-def tokenize_code(text):
-    return text.split(' ')
-
-STAT = Field(tokenize= tokenize_en, 
-            init_token='<sos>', 
-            eos_token='<eos>', 
-            lower=True,
-            batch_first = True)
-
-CODE = Field(tokenize = tokenize_code, 
-            init_token='<sos>', 
-            eos_token='<eos>', 
-            lower=False,
-            batch_first = True)
-
-
-stat_code_pairs = [Example.fromlist([p[0],p[1]], fields) for p in final_data]
-stat_code_pairs = Dataset(stat_code_pairs, fields)
-
-
-fields = [('statement', STAT),('code',CODE)]
-
-train_data, valid_data = stat_code_pairs.split(split_ratio=[0.90,0.10])
+        stat_code_pairs = [Example.fromlist([p[0],p[1]], fields) for p in final_data]
+        stat_code_pairs = Dataset(stat_code_pairs, fields)
 
 
-STAT.build_vocab(stat_code_pairs, min_freq=2)
-CODE.build_vocab(stat_code_pairs, min_freq=2)
 
+        train_data, valid_data = stat_code_pairs.split(split_ratio=[0.90,0.10])
 
-BATCH_SIZE = 8
+        STAT.build_vocab(stat_code_pairs, min_freq=2)
+        CODE.build_vocab(stat_code_pairs, min_freq=2)
 
-train_iterator, valid_iterator = BucketIterator.splits(
-    (train_data, valid_data),
-    batch_size = BATCH_SIZE,
-    device = device
-)
+        train_iterator, valid_iterator = BucketIterator.splits(
+            (train_data, valid_data),
+            batch_size = batch_size,
+            device = device
+        )
+        return STAT, CODE, train_iterator, valid_iterator
