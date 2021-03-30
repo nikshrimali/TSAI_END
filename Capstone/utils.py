@@ -25,3 +25,9 @@ def load_config(filename: str) -> dict:
         config = yaml.safe_load(fh)
 
     return config
+
+def count_parameters(model):
+    params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f'The model has {params:,} trainable parameters')
+    return params
+

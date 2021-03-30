@@ -53,7 +53,7 @@ class GetData:
         
         final_data = self.readdata()
 
-        fields = [('statement', STAT),('code', CODE)]
+        fields = [('code', CODE), ('statement', STAT)]
 
         stat_code_pairs = [Example.fromlist([p[0],p[1]], fields) for p in final_data]
         stat_code_pairs = Dataset(stat_code_pairs, fields)
@@ -61,13 +61,24 @@ class GetData:
 
 
         train_data, valid_data = stat_code_pairs.split(split_ratio=[0.90,0.10])
+        # print('Train_data is ', vars(train_data))
+        # print('Valid_data is ', vars(valid_data))
+        
+        # return train_data, valid_data
 
-        STAT.build_vocab(stat_code_pairs, min_freq=2)
         CODE.build_vocab(stat_code_pairs, min_freq=2)
+        STAT.build_vocab(stat_code_pairs, min_freq=2)
+
+        # train_iterator, valid_iterator = BucketIterator.splits(
+        #     (train_data, valid_data),
+        #     batch_size = batch_size,
+        #     device = device
+        # )
 
         train_iterator, valid_iterator = BucketIterator.splits(
-            (train_data, valid_data),
+            (train_data, valid_data), 
             batch_size = batch_size,
-            device = device
-        )
+            sort_key = lambda x: len(x.statement),
+            sort_within_batch = True,
+            device = device)
         return STAT, CODE, train_iterator, valid_iterator

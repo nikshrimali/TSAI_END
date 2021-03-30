@@ -1,5 +1,6 @@
 # Evaluate.py - Code for evaluation of model
 
+import torch
 
 def evaluate(model, iterator, criterion):
     
